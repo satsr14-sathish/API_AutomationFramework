@@ -14,7 +14,7 @@ import cucumber.api.junit.Cucumber;
 @RunWith(Cucumber.class)
 @CucumberOptions(features= "src\\test\\java\\com\\framework\\cucumber\\features", 
 glue={"com.framework.cucumber.stepdefinitions"},
-tags= {"@get"},
+tags= {"@put"},
 plugin = {"com.vimalselvam.cucumber.listener.ExtentCucumberFormatter:src/test/reports/cucumber_Extent_report.html"}
 		)
 public class TestRunner {

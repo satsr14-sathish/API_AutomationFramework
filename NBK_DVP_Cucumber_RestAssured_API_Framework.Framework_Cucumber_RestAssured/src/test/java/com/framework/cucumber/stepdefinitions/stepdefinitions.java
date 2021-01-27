@@ -6,12 +6,15 @@ import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import io.restassured.RestAssured;
+import io.restassured.http.Method;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.restassured.response.ResponseBody;
 import io.restassured.specification.RequestSpecification;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -73,23 +76,69 @@ public class stepdefinitions {
 
 	}
 
-	@And("^I hit the API with requestbody \"([^\"]*)\" and request method is \"([^\"]*)\"$")
-	public void i_hit_the_API_with_requestbody_and_request_method_is(String requestBodyPath, String requestType)
-			throws Throwable {
-		// Write code here that turns the phrase above into concrete actions
+	/*
+	 * @And("^I hit the API with requestbody \"([^\"]*)\" and request method is \"([^\"]*)\"$"
+	 * ) public void i_hit_the_API_with_requestbody_and_request_method_is(String
+	 * requestBodyPath, String requestType) throws Throwable { // Write code here
+	 * that turns the phrase above into concrete actions
+	 * 
+	 * RestAssured.baseURI = apiEndPointUri; RequestSpecification request =
+	 * RestAssured.given(); request.header("Content-Type", CONTENT_TYPE);
+	 * 
+	 * if (requestType.equalsIgnoreCase("GET")) { response = request.get(); }
+	 * STATUS_CODE = String.valueOf(response.getStatusCode()); RESPONSEBODY =
+	 * response.getBody().asString(); Reporter.addStepLog(Status.PASS +
+	 * " :: Request successfully processed"); Reporter.addStepLog("Response is :: "
+	 * + RESPONSEBODY);
+	 * 
+	 * }
+	 */
 
+
+	@And("^I hit the API with requestbody \"([^\"]*)\" and request method is \"([^\"]*)\"$")
+	//@And("^I try to verify the response value \"([^\"]*)\" is \"([^\"]*)\"$")
+
+	
+
+	public void submitrequest(String requestBodyPath, String requestType) throws Throwable {
 		RestAssured.baseURI = apiEndPointUri;
 		RequestSpecification request = RestAssured.given();
 		request.header("Content-Type", CONTENT_TYPE);
-
-		if (requestType.equalsIgnoreCase("GET")) {
+		if (requestBodyPath != null && !requestBodyPath.isEmpty() && requestType.equalsIgnoreCase("POST")
+				|| requestType.equalsIgnoreCase("PUT")) {
+			JSONParser jsonParser = new JSONParser();
+			//FILE_PATH = System.getProperty("user.dir") + "//src//test//java//com//factory//cucumber//"
+			//		+ requestBodyPath;
+			
+			FILE_PATH = System.getProperty("user.dir") + "\\src\\test\\java\\com\\framework\\cucumber\\"+ requestBodyPath;
+			System.out.println(FILE_PATH);
+			System.out.println(requestBodyPath);
+			
+			
+			logger.info("Path of requestbody file is :: " + FILE_PATH);
+			try (FileReader reader = new FileReader(FILE_PATH))
+			{
+				// try (FileReader reader = new FileReader(FILE_PATH)) {
+				Object obj = jsonParser.parse(reader);
+				REQUESTBODY = obj.toString();
+				logger.info("Request Body is :: " + REQUESTBODY);
+			} catch (FileNotFoundException  exc) {
+				((Throwable) exc).printStackTrace();
+			}
+			if (REQUESTBODY.length() > 0) {
+				request.body(REQUESTBODY);
+				response = request.post();
+			} else {
+				Reporter.addStepLog(Status.FAIL + " :: Request Body cannot be null or empty!");
+				logger.info(" Request Body cannot be null or empty!");
+			}
+		} else if (requestType.equalsIgnoreCase("GET")) {
 			response = request.get();
 		}
 		STATUS_CODE = String.valueOf(response.getStatusCode());
 		RESPONSEBODY = response.getBody().asString();
 		Reporter.addStepLog(Status.PASS + " :: Request successfully processed");
 		Reporter.addStepLog("Response is :: " + RESPONSEBODY);
-
 	}
 
 	@Then("^I try to verify the status code is \"([^\"]*)\"$")
@@ -109,18 +158,31 @@ public class stepdefinitions {
 	@And("^I try to verify the response value \"([^\"]*)\" is \"([^\"]*)\"$")
 	public void verifyResponseValue(String responseKey, String value) throws Throwable {
 		
-		  RestAssured.baseURI = apiEndPointUri; RequestSpecification httpRequest =
-		  RestAssured.given(); Response response = httpRequest.get(apiEndPointUri);
-		  ResponseBody body = response.getBody(); String bodyStringValue =
-		  body.asString();
-		  
-		  // Validate if Response Body Contains a specific String
-		  Assert.assertTrue(bodyStringValue.contains("employee_name"));
-		  //Assert.assertTrue(bodyStringValue.contains("employee_salary"));
+		/*
+		 * Object obj = responseKey; JSONParser parser = new JSONParser(); JSONObject
+		 * responseObject = (JSONObject) parser.parse(RESPONSEBODY); Object key
+		 * =(Object) responseObject.get(responseKey);
+		 * compareResponseValues(String.valueOf(value), String.valueOf(key),
+		 * responseKey);
+		 */
 		 
-
+		
+		
+		  // Specify the base URL to the RESTful web service 
+		RestAssured.baseURI="https://dummy.restapiexample.com/api/v1/employee";
+		  
+		  
+		  RequestSpecification httpRequest = RestAssured.given();
+		  
+		  
+		  Response response = httpRequest.request(Method.GET, "/1");
+		  
+		  
+		  String responseBody = response.getBody().asString();
+		  System.out.println("Response Body is =>  " + responseBody);
+  
 	}
-
+	
 	private void compareResponseValues(String expected, String actual, String responseKey) {
 		Reporter.addStepLog("Actual Value is  ::" + actual);
 		Reporter.addStepLog("Expected Value is  ::" + expected);
