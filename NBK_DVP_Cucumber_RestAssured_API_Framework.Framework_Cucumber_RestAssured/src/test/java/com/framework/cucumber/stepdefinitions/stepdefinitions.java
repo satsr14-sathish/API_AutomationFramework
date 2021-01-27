@@ -6,7 +6,9 @@ import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import io.restassured.RestAssured;
+import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import io.restassured.response.ResponseBody;
 import io.restassured.specification.RequestSpecification;
 
 import java.io.FileInputStream;
@@ -15,13 +17,14 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.junit.Assert;
 
 import com.aventstack.extentreports.Status;
 import com.vimalselvam.cucumber.listener.Reporter;
 
-public class stepdefinitions
-{
+public class stepdefinitions {
 	private final static Logger logger = Logger.getLogger(stepdefinitions.class.getName());
 	public static String apiEndPointUri;
 	public static String testName;
@@ -36,16 +39,17 @@ public class stepdefinitions
 	public void i_want_to_set_URL_as_for_test_case(String URL, String testCaseName) throws Throwable {
 		// Write code here that turns the phrase above into concrete actions
 
-
 		Properties prop = new Properties();
 
-		String configpath = System.getProperty("user.dir")+"\\src\\test\\java\\com\\framework\\cucumber\\configuration\\configuration.properties";
+		String configpath = System.getProperty("user.dir")
+				+ "\\src\\test\\java\\com\\framework\\cucumber\\configuration\\configuration.properties";
 
-		//String configpath = "C:\\Users\\sathish\\Downloads\\API_AutomationV1.2\\Framework_Cucumber_RestAssured\\src\\test\\java\\com\\framework\\cucumber\\configuration\\";
+		// String configpath =
+		// "C:\\Users\\sathish\\Downloads\\API_AutomationV1.2\\Framework_Cucumber_RestAssured\\src\\test\\java\\com\\framework\\cucumber\\configuration\\";
 		prop.load(new FileInputStream(configpath));
-		String mybaseAPI= prop.getProperty("baseURL")+"/"+prop.getProperty("baseURLextn");
+		String mybaseAPI = prop.getProperty("baseURL") + "/" + prop.getProperty("baseURLextn");
 		System.out.println(mybaseAPI);
-		//System.out.println("My basetest user name" + prop.getProperty("username"));
+		// System.out.println("My basetest user name" + prop.getProperty("username"));
 
 		String apiHostName = mybaseAPI;
 		System.out.println(apiHostName);
@@ -67,37 +71,17 @@ public class stepdefinitions
 			logger.info("Content type cannot be null or empty!");
 		}
 
-
 	}
 
 	@And("^I hit the API with requestbody \"([^\"]*)\" and request method is \"([^\"]*)\"$")
-	public void i_hit_the_API_with_requestbody_and_request_method_is(String requestBodyPath, String requestType) throws Throwable {
+	public void i_hit_the_API_with_requestbody_and_request_method_is(String requestBodyPath, String requestType)
+			throws Throwable {
 		// Write code here that turns the phrase above into concrete actions
 
 		RestAssured.baseURI = apiEndPointUri;
 		RequestSpecification request = RestAssured.given();
 		request.header("Content-Type", CONTENT_TYPE);
-		/* if (requestBodyPath != null && !requestBodyPath.isEmpty() && requestType.equalsIgnoreCase("POST")
-                || requestType.equalsIgnoreCase("PUT")) {
-            //JSONParser jsonParser = new JSONParser();
-            FILE_PATH = System.getProperty("user.dir") + "//src//test//java//com//factory//cucumber//"
-                    + requestBodyPath;
-            logger.info("Path of requestbody file is :: " + FILE_PATH);
-            try (FileReader reader = new FileReader(FILE_PATH)) {
-                Object obj = jsonParser.parse(reader);
-                REQUESTBODY = obj.toString();
-                logger.info("Request Body is :: " + REQUESTBODY);
-            } catch (FileNotFoundException | ParseException exc) {
-                exc.printStackTrace();
-            }
-            if (REQUESTBODY.length() > 0) {
-                request.body(REQUESTBODY);
-                response = request.post();
-            } else {
-                Reporter.addStepLog(Status.FAIL + " :: Request Body cannot be null or empty!");
-                logger.info(" Request Body cannot be null or empty!");
-            }
-            }*/
+
 		if (requestType.equalsIgnoreCase("GET")) {
 			response = request.get();
 		}
@@ -105,7 +89,6 @@ public class stepdefinitions
 		RESPONSEBODY = response.getBody().asString();
 		Reporter.addStepLog(Status.PASS + " :: Request successfully processed");
 		Reporter.addStepLog("Response is :: " + RESPONSEBODY);
-
 
 	}
 
@@ -121,11 +104,37 @@ public class stepdefinitions
 			logger.info("Status Code is not as expected :: " + STATUS_CODE);
 		}
 
+	}
+
+	@And("^I try to verify the response value \"([^\"]*)\" is \"([^\"]*)\"$")
+	public void verifyResponseValue(String responseKey, String value) throws Throwable {
+		
+		  RestAssured.baseURI = apiEndPointUri; RequestSpecification httpRequest =
+		  RestAssured.given(); Response response = httpRequest.get(apiEndPointUri);
+		  ResponseBody body = response.getBody(); String bodyStringValue =
+		  body.asString();
+		  
+		  // Validate if Response Body Contains a specific String
+		  Assert.assertTrue(bodyStringValue.contains("employee_name"));
+		  //Assert.assertTrue(bodyStringValue.contains("employee_salary"));
+		 
 
 	}
-	
-	
-	
+
+	private void compareResponseValues(String expected, String actual, String responseKey) {
+		Reporter.addStepLog("Actual Value is  ::" + actual);
+		Reporter.addStepLog("Expected Value is  ::" + expected);
+		logger.info("Actual Value is  ::" + actual);
+		logger.info("Expected Value is  ::" + expected);
+		if (expected.equals(actual)) {
+			Assert.assertEquals(actual, expected);
+			Reporter.addStepLog(Status.PASS + " " + responseKey + " : Expected value : " + expected
+					+ " mathches with Actual Value : " + actual);
+		} else {
+			Reporter.addStepLog(Status.FAIL + " " + responseKey + " : Expected value : " + expected
+					+ " do not matches with Actual Value : " + actual);
+			Assert.assertEquals(actual, expected);
+		}
+	}
+
 }
-
-
